@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <!-- Mobile + PWA Meta -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <title>Mosquito Hunter</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div id="rotate-prompt">
+        <img src="rotate.png" alt="Rotate Device">
+        <p class="pixel-text yellow-stroke">Rotate Device</p>
+    </div>
+
+    <div id="game-container">
+
+        <canvas id="game-canvas"></canvas>
+
+        <!-- HUD -->
+        <div id="hud" class="hidden">
+            <div class="score-container">
+                <img src="signal-2026-03-03-194334.png" class="score-bg">
+                <div id="score-display" class="pixel-text yellow-stroke">0</div>
+            </div>
+
+            <div id="health-bar">
+                <img id="heart-sprite" src="signal-2026-03-03-194349.png">
+            </div>
+
+            <div class="hud-controls">
+                <button id="btn-pause">⏸</button>
+                <button id="btn-close">❌</button>
+            </div>
+        </div>
+
+        <!-- Main Menu -->
+        <div id="main-menu" class="ui-overlay">
+            <div class="button-stack">
+                <button id="btn-play" class="pixel-btn">
+                    <img src="play.png" class="btn-img">
+                    <span class="btn-text pixel-text yellow-stroke">Play</span>
+                </button>
+
+                <button id="btn-credits" class="pixel-btn">
+                    <img src="credits.png" class="btn-img">
+                    <span class="btn-text pixel-text yellow-stroke">Credits</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Pause Screen -->
+        <div id="pause-screen" class="ui-overlay hidden">
+            <div class="button-stack">
+                <button id="btn-resume" class="pixel-btn">
+                    <img src="play.png" class="btn-img">
+                    <span class="btn-text pixel-text yellow-stroke">Resume</span>
+                </button>
+
+                <button id="btn-exit" class="pixel-btn">
+                    <img src="exit.png" class="btn-img">
+                    <span class="btn-text pixel-text yellow-stroke">Exit</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Over -->
+        <div id="game-over-screen" class="ui-overlay hidden">
+            <div class="button-stack">
+                <p class="pixel-text yellow-stroke">Game Over</p>
+                <p class="pixel-text yellow-stroke">Score: <span id="final-score">0</span></p>
+
+                <button id="btn-restart" class="pixel-btn">
+                    <img src="play.png" class="btn-img">
+                    <span class="btn-text pixel-text yellow-stroke">Retry</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="game.js"></script>
+
+</body>
+</html>
