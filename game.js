@@ -1,18 +1,9 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const rotateScreen = document.getElementById("rotateScreen");
 const topBar = document.getElementById("topBar");
 
-function checkOrientation() {
-    if (window.innerHeight > window.innerWidth) {
-        rotateScreen.style.display = "flex";
-    } else {
-        rotateScreen.style.display = "none";
-    }
-}
-window.addEventListener("resize", checkOrientation);
-checkOrientation();
+// Game is portrait-native (1080x1920 design), so no rotate-device gate is needed.
 
 /* Fixed internal design resolution. The canvas buffer is ALWAYS this size,
    regardless of device - CSS (aspect-ratio + height:100%) scales it visually
@@ -269,6 +260,10 @@ function loop() {
 
 /* UI Controls */
 playBtn.onclick = () => {
+    const el = document.documentElement;
+    const requestFS = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    if (requestFS) requestFS.call(el).catch(() => {});
+
     welcomeScreen.style.display = "none";
     topBar.style.display = "flex";
     resizeCanvas();
