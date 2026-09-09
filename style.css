@@ -56,7 +56,6 @@ body {
 }
 
 /* Screens */
-#welcomeScreen,
 #creditsScreen,
 #pauseMenu {
     position: fixed;
@@ -68,8 +67,39 @@ body {
     z-index: 500;
 }
 
+/* Welcome screen holds a fixed-aspect (9:16) frame so the frosted button
+   panel baked into the art lines up correctly at any viewport size,
+   instead of stretching/cropping via background-size: cover. */
 #welcomeScreen {
-    background: url("signal-2026-03-04-162705.png") center/cover no-repeat;
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: black;
+}
+
+#welcomeScreen .artFrame {
+    position: relative;
+    height: 100%;
+    aspect-ratio: 1080 / 1920;
+    max-width: 100%;
+    background: url("menu_bg.png") center/contain no-repeat;
+}
+
+/* Buttons positioned as a % of the art frame so they always land inside
+   the frosted panel baked into menu_bg.png regardless of screen size. */
+#welcomeScreen .menu {
+    position: absolute;
+    left: 8%;
+    top: 20%;
+    width: 84%;
+    height: 52%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 #creditsScreen,
@@ -86,6 +116,7 @@ body {
     border: 3px solid yellow;
     color: yellow;
     cursor: pointer;
+    width: 70%;
 }
 
 /* Game Wrapper */
@@ -101,8 +132,13 @@ body {
     align-items: center;
 }
 
+/* Canvas keeps a fixed internal design resolution (set in JS) and is
+   letterboxed to fit the viewport via CSS, never stretched. */
 #gameCanvas {
     background: black;
     max-width: 100%;
     max-height: 100%;
+    aspect-ratio: 1080 / 1920;
+    width: auto;
+    height: 100%;
 }
