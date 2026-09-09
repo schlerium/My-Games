@@ -15,14 +15,29 @@ window.addEventListener("resize", checkOrientation);
 checkOrientation();
 
 function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight - 60;
+    // Match the canvas's internal pixel buffer to its actual rendered CSS size,
+    // so click coordinates line up with what's drawn (fixes tap/hit mismatch).
+    const wrapper = document.getElementById("gameWrapper");
+    const rect = wrapper.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
 }
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
+/* Assets */
 const background = new Image();
 background.src = "signal-2026-03-04-162705.png";
+let backgroundReady = false;
+background.onload = () => { backgroundReady = true; };
+
+const mosquitoImg = new Image();
+mosquitoImg.src = "mosquito.png";
+const mosquitoSpecialImg = new Image();
+mosquitoSpecialImg.src = "mosquito_special.png";
+let spritesReady = { normal: false, special: false };
+mosquitoImg.onload = () => { spritesReady.normal = true; };
+mosquitoSpecialImg.onload = () => { spritesReady.special = true; };
 
 /* UI */
 const welcomeScreen = document.getElementById("welcomeScreen");
@@ -50,16 +65,55 @@ let wave = 1;
 let mosquitoes = [];
 let gameRunning = false;
 let gamePaused = false;
+let spawnTimer = null;
+
+/* Wave popup state */
+let waveBanner = { text: "", alpha: 0, startedAt: 0 };
+const WAVE_BANNER_DURATION = 1400; // ms, fade included
+
+/* ---- Difficulty curve ----
+   Wave rises steadily with score (every 15 points), uncapped.
+   Spawn interval eases toward a floor using exponential decay so it
+   never goes to zero/infinite speed - just gets asymptotically harder.
+   Miss tolerance also tightens gradually instead of switching on suddenly. */
+function waveForScore(s) {
+    return Math.floor(s / 15) + 1;
+}
+
+function spawnIntervalForWave(w) {
+    const base = 1000;
+    const floor = 350;
+    const interval = base * Math.pow(0.92, w - 1);
+    return Math.max(floor, interval);
+}
+
+function speedMultiplierForWave(w) {
+    // Gentle, capped growth - approaches 2.2x speed, never runs away
+    return 1 + Math.min(1.2, (w - 1) * 0.12);
+}
+
+function missToleranceForWave(w) {
+    // Higher number = more forgiving. Eases down from 4 -> 2 as waves climb.
+    return Math.max(2, 4 - Math.floor((w - 1) / 3));
+}
+
+function maybeAnnounceWave(newWave) {
+    if (newWave !== wave) {
+        wave = newWave;
+        waveBanner = { text: "WAVE " + wave, alpha: 1, startedAt: Date.now() };
+    }
+}
 
 /* Mosquito */
 class Mosquito {
-    constructor(type="normal") {
+    constructor(type = "normal") {
         this.type = type;
         this.size = 40;
         this.x = Math.random() * (canvas.width - this.size);
         this.y = Math.random() * (canvas.height - this.size);
-        this.dx = (Math.random() - 0.5) * 4;
-        this.dy = (Math.random() - 0.5) * 4;
+        const speed = speedMultiplierForWave(wave);
+        this.dx = (Math.random() - 0.5) * 4 * speed;
+        this.dy = (Math.random() - 0.5) * 4 * speed;
         this.spawn = Date.now();
         this.life = 2500;
     }
@@ -73,10 +127,18 @@ class Mosquito {
     }
 
     draw() {
-        ctx.fillStyle = this.type === "special" ? "red" : "black";
-        ctx.beginPath();
-        ctx.arc(this.x + 20, this.y + 20, 15, 0, Math.PI * 2);
-        ctx.fill();
+        const img = this.type === "special" ? mosquitoSpecialImg : mosquitoImg;
+        const ready = this.type === "special" ? spritesReady.special : spritesReady.normal;
+
+        if (ready) {
+            ctx.drawImage(img, this.x, this.y, this.size, this.size);
+        } else {
+            // Fallback while sprite loads, so nothing invisible/broken shows
+            ctx.fillStyle = this.type === "special" ? "red" : "black";
+            ctx.beginPath();
+            ctx.arc(this.x + 20, this.y + 20, 15, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 
     expired() {
@@ -90,9 +152,9 @@ function updateUI() {
 }
 
 function registerMiss() {
-    if (wave < 4) return;
     misses++;
-    if (misses % 2 === 0) {
+    const tolerance = missToleranceForWave(wave);
+    if (misses % tolerance === 0) {
         hearts--;
         updateUI();
         if (hearts <= 0) gameOver();
@@ -100,6 +162,7 @@ function registerMiss() {
 }
 
 function gameOver() {
+    clearTimeout(spawnTimer);
     alert("Game Over\nScore: " + score);
     location.reload();
 }
@@ -107,25 +170,24 @@ function gameOver() {
 function spawn() {
     if (!gameRunning) return;
 
-    wave = score >= 50 ? 4 :
-           score >= 25 ? 3 :
-           score >= 10 ? 2 : 1;
+    maybeAnnounceWave(waveForScore(score));
 
-    let type = (wave >= 4 && Math.random() < 0.2)
-        ? "special"
-        : "normal";
-
+    let type = (wave >= 4 && Math.random() < 0.2) ? "special" : "normal";
     mosquitoes.push(new Mosquito(type));
 
-    setTimeout(spawn, Math.max(500, 1000 - wave * 100));
+    spawnTimer = setTimeout(spawn, spawnIntervalForWave(wave));
 }
 
 canvas.addEventListener("click", e => {
     if (!gameRunning || gamePaused) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    // Scale click position from CSS pixels to canvas buffer pixels,
+    // in case the canvas is ever displayed at a different size than its buffer.
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
 
     let hit = false;
 
@@ -143,12 +205,41 @@ canvas.addEventListener("click", e => {
     updateUI();
 });
 
+function drawWaveBanner() {
+    if (waveBanner.alpha <= 0) return;
+
+    const elapsed = Date.now() - waveBanner.startedAt;
+    const fadeStart = 600; // ms before it starts fading
+    if (elapsed > fadeStart) {
+        waveBanner.alpha = Math.max(0, 1 - (elapsed - fadeStart) / (WAVE_BANNER_DURATION - fadeStart));
+    }
+    if (elapsed > WAVE_BANNER_DURATION) {
+        waveBanner.alpha = 0;
+        return;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = waveBanner.alpha;
+    ctx.fillStyle = "yellow";
+    ctx.font = "bold 32px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(waveBanner.text, canvas.width / 2, canvas.height / 2);
+    ctx.restore();
+}
+
 function loop() {
     if (!gameRunning) return;
 
     if (!gamePaused) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+        if (backgroundReady) {
+            ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+        } else {
+            ctx.fillStyle = "#111";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
 
         mosquitoes.forEach(m => m.update());
         mosquitoes.forEach(m => m.draw());
@@ -160,6 +251,8 @@ function loop() {
             }
             return true;
         });
+
+        drawWaveBanner();
     }
 
     requestAnimationFrame(loop);
@@ -169,6 +262,17 @@ function loop() {
 playBtn.onclick = () => {
     welcomeScreen.style.display = "none";
     topBar.style.display = "flex";
+    resizeCanvas();
+
+    score = 0;
+    hearts = 10;
+    misses = 0;
+    wave = 1;
+    mosquitoes = [];
+    updateUI();
+
+    waveBanner = { text: "WAVE 1", alpha: 1, startedAt: Date.now() };
+
     gameRunning = true;
     spawn();
     loop();
