@@ -14,20 +14,23 @@ function checkOrientation() {
 window.addEventListener("resize", checkOrientation);
 checkOrientation();
 
+/* Fixed internal design resolution. The canvas buffer is ALWAYS this size,
+   regardless of device - CSS (aspect-ratio + height:100%) scales it visually
+   to fit the screen without stretching. This keeps mosquito size/speed and
+   background composition identical across every device. Click coordinates
+   are converted from rendered size to this fixed buffer in the click handler. */
+const DESIGN_WIDTH = 1080;
+const DESIGN_HEIGHT = 1920;
+
 function resizeCanvas() {
-    // Match the canvas's internal pixel buffer to its actual rendered CSS size,
-    // so click coordinates line up with what's drawn (fixes tap/hit mismatch).
-    const wrapper = document.getElementById("gameWrapper");
-    const rect = wrapper.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
+    canvas.width = DESIGN_WIDTH;
+    canvas.height = DESIGN_HEIGHT;
 }
-window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
 /* Assets */
 const background = new Image();
-background.src = "signal-2026-03-04-162705.png";
+background.src = "gameplay_bg.png";
 let backgroundReady = false;
 background.onload = () => { backgroundReady = true; };
 
@@ -105,15 +108,21 @@ function maybeAnnounceWave(newWave) {
 }
 
 /* Mosquito */
+// Size/speed are scaled relative to the fixed design resolution (1080x1920)
+// so they read consistently at any display size rather than being tuned to
+// whatever pixel buffer a device happened to produce.
+const MOSQUITO_SIZE = Math.round(DESIGN_WIDTH * 0.09);   // ~97px on a 1080-wide buffer
+const BASE_SPEED = DESIGN_WIDTH * 0.008;                  // ~8.6px/frame baseline
+
 class Mosquito {
     constructor(type = "normal") {
         this.type = type;
-        this.size = 40;
+        this.size = MOSQUITO_SIZE;
         this.x = Math.random() * (canvas.width - this.size);
         this.y = Math.random() * (canvas.height - this.size);
         const speed = speedMultiplierForWave(wave);
-        this.dx = (Math.random() - 0.5) * 4 * speed;
-        this.dy = (Math.random() - 0.5) * 4 * speed;
+        this.dx = (Math.random() - 0.5) * 2 * BASE_SPEED * speed;
+        this.dy = (Math.random() - 0.5) * 2 * BASE_SPEED * speed;
         this.spawn = Date.now();
         this.life = 2500;
     }
@@ -136,7 +145,7 @@ class Mosquito {
             // Fallback while sprite loads, so nothing invisible/broken shows
             ctx.fillStyle = this.type === "special" ? "red" : "black";
             ctx.beginPath();
-            ctx.arc(this.x + 20, this.y + 20, 15, 0, Math.PI * 2);
+            ctx.arc(this.x + this.size / 2, this.y + this.size / 2, this.size * 0.375, 0, Math.PI * 2);
             ctx.fill();
         }
     }
@@ -192,8 +201,8 @@ canvas.addEventListener("click", e => {
     let hit = false;
 
     mosquitoes = mosquitoes.filter(m => {
-        const d = Math.hypot(x - (m.x + 20), y - (m.y + 20));
-        if (d < 20) {
+        const d = Math.hypot(x - (m.x + m.size / 2), y - (m.y + m.size / 2));
+        if (d < m.size / 2) {
             hit = true;
             score += m.type === "special" ? 10 : 1;
             return false;
@@ -221,7 +230,7 @@ function drawWaveBanner() {
     ctx.save();
     ctx.globalAlpha = waveBanner.alpha;
     ctx.fillStyle = "yellow";
-    ctx.font = "bold 32px monospace";
+    ctx.font = "bold 84px monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(waveBanner.text, canvas.width / 2, canvas.height / 2);
