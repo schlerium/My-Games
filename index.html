@@ -2,61 +2,45 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Mosquito Hunter</title>
-
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
-
-<!-- Rotate Screen -->
 <div id="rotateScreen">
-    <img src="signal-2026-03-05-182622.png" alt="Rotate">
-    <p>ROTATE DEVICE</p>
+<p>ROTATE DEVICE</p>
 </div>
-
-<!-- Top Bar -->
 <div id="topBar">
-    <div class="leftUI">
-        <span id="scoreDisplay">🦟 0</span>
-        <span id="heartDisplay">❤️ 10</span>
-    </div>
-    <div class="rightUI">
-        <button id="pauseBtn">❚❚</button>
-        <button id="exitBtn">✕</button>
-    </div>
+<div class="leftUI">
+<span id="scoreDisplay">🦟 0</span>
+<span id="heartDisplay">❤️ 10</span>
 </div>
-
-<!-- Welcome Screen -->
+<div class="rightUI">
+<button id="pauseBtn">❚❚</button>
+<button id="exitBtn">✕</button>
+</div>
+</div>
 <div id="welcomeScreen">
-    <div class="menu">
-        <button id="playBtn">PLAY</button>
-        <button id="creditsBtn">CREDITS</button>
-    </div>
+<div class="artFrame">
+<div class="menu">
+<button id="playBtn">PLAY</button>
+<button id="creditsBtn">CREDITS</button>
 </div>
-
-<!-- Credits -->
+</div>
+</div>
 <div id="creditsScreen">
-    <h2>Developer - Satyajit</h2>
-    <button id="backBtn">BACK</button>
+<h2>Developer - Satyajit</h2>
+<button id="backBtn">BACK</button>
 </div>
-
-<!-- Pause -->
 <div id="pauseMenu">
-    <div class="menu">
-        <button id="resumeBtn">RESUME</button>
-        <button id="pauseExitBtn">EXIT</button>
-    </div>
+<div class="menu">
+<button id="resumeBtn">RESUME</button>
+<button id="pauseExitBtn">EXIT</button>
 </div>
-
-<!-- Game Wrapper -->
+</div>
 <div id="gameWrapper">
-    <canvas id="gameCanvas"></canvas>
+<canvas id="gameCanvas"></canvas>
 </div>
-
-<script src="game.js?v=2"></script>
-
+<script src="game.js?v=4"></script>
 </body>
 </html>
